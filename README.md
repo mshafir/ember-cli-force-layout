@@ -3,6 +3,7 @@
 This is a component wrapping some of the functionality of D3 Force Layouts in
 a convenient package. 
 
+See the example: http://mshafir.github.io/ember-cli-force-layout/simple
 It's based on http://bl.ocks.org/benzguo/4370043, but with an upgrade for handling changes to zoom and drag logic in D3 v3.
 
 Use as follows:
