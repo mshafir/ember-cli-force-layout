@@ -3,17 +3,20 @@
 This is a component wrapping some of the functionality of D3 Force Layouts in
 a convenient package. Use as follows:
 
- `{{force-layout-graph 
+```
+{{force-layout-graph 
  	charge=charge 
  	linkDistance=linkDistance 
  	gravity=gravity 
  	friction=friction 
  	editable=editable 
  	nodes=nodes}}`
+ ```
 
 Default Styling necessary for the graph is up to you, but the following is a basic sample
 
-`.node {
+```
+.node {
   fill: #000;
   cursor: crosshair;
 }
@@ -43,7 +46,8 @@ Default Styling necessary for the graph is up to you, but the following is a bas
 
 .link_selected {
   stroke: #ff7f0e;
-}`
+}
+```
 
 
 ## Installation
