@@ -40,7 +40,6 @@ ForceLayoutGraphComponent = Ember.Component.extend(
 	setForceProperties: ->
 		@force.charge(@get('charge'))
 				.linkDistance(@get('linkDistance'))
-				.friction(@get('friction'))
 		if @get('friction')
 			@force.friction(@get('friction'))
 		if @get('gravity')
