@@ -1,0 +1,21 @@
+<h3>Simple Force Layout</h3>
+Charge:{{input placeholder="charge" value=charge}}<br/>
+Link Distance:{{input placeholder="link distance" value=linkDistance}}<br/>
+Gravity:{{input placeholder="gravity" value=gravity}}<br/>
+
+
+<div style="position: absolute; left:0; top: 200px; right: 30%; bottom:0;">
+	{{force-layout-graph charge=charge linkDistance=linkDistance gravity=gravity nodes=nodes}}
+</div>
+
+<div style="position: absolute; left: 70%; top: 200px; bottom:0">
+	{{#each node in nodes}}
+		<div>
+			{{node.text}}:<br/>&nbsp;&nbsp; ({{node.x}}, {{node.y}})
+		</div>
+	{{/each}}
+</div>
+
+
+{{outlet}}
+
