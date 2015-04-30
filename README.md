@@ -1,7 +1,11 @@
 # ember-cli-d3-force-layout
 
 This is a component wrapping some of the functionality of D3 Force Layouts in
-a convenient package. Use as follows:
+a convenient package. 
+
+It's based on http://bl.ocks.org/benzguo/4370043, but with an upgrade for handling changes to zoom and drag logic in D3 v3.
+
+Use as follows:
 
 ```
 {{force-layout-graph 
@@ -10,7 +14,7 @@ a convenient package. Use as follows:
  	gravity=gravity 
  	friction=friction 
  	editable=editable 
- 	nodes=nodes}}`
+ 	nodes=nodes}}
  ```
 
 Default Styling necessary for the graph is up to you, but the following is a basic sample
