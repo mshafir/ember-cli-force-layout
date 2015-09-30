@@ -1,17 +1,34 @@
 <h3>Simple Force Layout</h3>
-Charge:{{input placeholder="charge" value=charge}}<br/>
-Link Distance:{{input placeholder="link distance" value=linkDistance}}<br/>
-Gravity:{{input placeholder="gravity" value=gravity}}<br/>
-
+<div>
+  Charge:{{input placeholder="charge" value=model.charge}}<br/>
+</div>
+<div>
+  Link Distance:{{input placeholder="link distance" value=model.linkDistance}}<br/>
+</div>
+<div>
+  Gravity:{{input placeholder="gravity" value=model.gravity}}<br/>
+</div>
+<div>
+  <label>Editable {{input type="checkbox" checked=model.editable}}</label>
+</div>
 
 <div style="position: absolute; left:0; top: 200px; right: 30%; bottom:0;">
-	{{force-layout-graph charge=charge linkDistance=linkDistance gravity=gravity nodes=nodes}}
+	{{force-layout-graph
+    charge=model.charge
+    linkDistance=model.linkDistance
+    gravity=model.gravity
+    nodes=model.nodes
+    links=model.links
+    editable=model.editable
+    addedNode="addedNode"
+    addedLink="addedLink"
+  }}
 </div>
 
 <div style="position: absolute; left: 70%; top: 200px; bottom:0">
-	{{#each node in nodes}}
+	{{#each model.nodes as |node|}}
 		<div>
-			{{node.text}}:<br/>&nbsp;&nbsp; ({{node.x}}, {{node.y}})
+			{{node.name}}
 		</div>
 	{{/each}}
 </div>
