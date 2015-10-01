@@ -12,7 +12,7 @@
   <label>Editable {{input type="checkbox" checked=model.editable}}</label>
 </div>
 
-<div style="position: absolute; left:0; top: 200px; right: 30%; bottom:0;">
+<div>
 	{{force-layout-graph
     charge=model.charge
     linkDistance=model.linkDistance
@@ -21,18 +21,11 @@
     links=model.links
     editable=model.editable
     addedNode="addedNode"
+    removedNode="removedNode"
     addedLink="addedLink"
+    removedLink="removedLink"
   }}
 </div>
-
-<div style="position: absolute; left: 70%; top: 200px; bottom:0">
-	{{#each model.nodes as |node|}}
-		<div>
-			{{node.name}}
-		</div>
-	{{/each}}
-</div>
-
 
 {{outlet}}
 

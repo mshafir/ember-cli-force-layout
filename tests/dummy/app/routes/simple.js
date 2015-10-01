@@ -8,7 +8,7 @@ export default Ember.Route.extend({
       charge: -1000,
       gravity: null,
       linkDistance: 50,
-      nodes: [
+      nodes: Ember.A([
         {name: 'Microsoft'},
         {name: 'Samsung'},
         {name: 'Motorola'},
@@ -29,8 +29,8 @@ export default Ember.Route.extend({
         {name: 'ZTE'},
         {name: 'Sony'},
         {name: 'Amazon'}
-      ],
-      links: [
+      ]),
+      links: Ember.A([
         {source: "Microsoft", target: "Amazon", type: "licensing"},
         {source: "Microsoft", target: "HTC", type: "licensing"},
         {source: "Samsung", target: "Apple", type: "suit"},
@@ -59,7 +59,7 @@ export default Ember.Route.extend({
         {source: "Apple", target: "Samsung", type: "suit"},
         {source: "Kodak", target: "RIM", type: "suit"},
         {source: "Nokia", target: "Qualcomm", type: "suit"}
-      ]
+      ])
     };
   }
 });

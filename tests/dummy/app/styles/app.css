@@ -11,9 +11,21 @@ body {
   cursor: crosshair;
 }
 
+.node:hover {
+  stroke: #000;
+  stroke-width: 15;
+  transition: 0.2s;
+}
+
+.dragging .node {
+  stroke: #000;
+  stroke-width: 15;
+  transition: 0.2s;
+}
+
 .node_selected {
   fill: #ff7f0e;
-  stroke: #ff7f0e;
+  stroke: #ff7f0e !important;
 }
 
 .drag_line {
@@ -28,7 +40,21 @@ body {
   pointer-events: none;
 }
 
-.graph-text {
+.graph-node-text {
+  text-shadow:
+  0 0 2px white,
+  0 0 2px white,
+  0 0 2px white,
+  0 0 2px white,
+  0 0 2px white,
+  0 0 2px white,
+  0 0 2px white,
+  0 0 2px white,
+  0 0 2px white,
+  0 0 2px white;
+}
+
+.graph-link-text {
   text-shadow:
   0 0 2px white,
   0 0 2px white,
@@ -49,6 +75,31 @@ body {
   cursor: crosshair;
 }
 
+.editing .link:hover {
+  stroke-width: 8;
+  transition: 0.2s;
+}
+
 .link_selected {
   stroke: #ff7f0e;
+}
+
+.graph-btn-group {
+  background-color: grey;
+}
+
+.graph-btn {
+  padding: 0.2rem;
+  margin: 0.1rem;
+  display: inline-block;
+  border: 1px solid black;
+  cursor: pointer;
+}
+
+.graph-btn:hover {
+  background-color: lightgray;
+}
+
+.graph-btn.selected {
+  background-color: white;
 }

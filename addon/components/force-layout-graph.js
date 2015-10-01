@@ -1,18 +1,21 @@
 import Ember from 'ember'
 import layout from '../templates/components/force-layout-graph'
 
+const {computed} = Ember;
+
 export default Ember.Component.extend({
   layout: layout,
 
   width: 960,
   height: 500,
   editable: true,
+  dragging: false,
 
-  selected_node: null,
-  selected_link: null,
+  selectedNode: null,
+  selectedLink: null,
   mousedown_link: null,
-  mousedown_node: null,
-  mouseup_node: null,
+  mousedownNode: null,
+  mouseupNode: null,
 
   initializeProperties() {
     this._initialize('charge', -1000);
@@ -32,8 +35,8 @@ export default Ember.Component.extend({
     this._bindProperty('linkDistance', this.forcePropertyUpdate);
     this._bindProperty('gravity', this.forcePropertyUpdate);
     this._bindProperty('friction', this.forcePropertyUpdate);
-    this._bindProperty('nodes', this.graphPropertyUpdate);
-    this._bindProperty('links', this.graphPropertyUpdate);
+    this._bindProperty('nodes.@each', this.graphPropertyUpdate);
+    this._bindProperty('links.@each', this.graphPropertyUpdate);
   },
 
   /**
@@ -80,41 +83,59 @@ export default Ember.Component.extend({
       return (l.source == node) || (l.target == node);
     });
     this.toSplice.map((l) => {
-      //this.set('links', this.get('links').filter((it) => it !== l));
+      this.sendAction('removedLink', this.get('links').indexOf(l));
     });
   },
 
   dataUpdate() {
     // calculate the node diff, while performing an update
     let retainKeys = {};
+    let ind = 0;
     for (let node of this.get('nodes')) {
       if (node.name) {
         if (!(node.name in this._nodeMap)) {
-          let newNode = {name: node.name};
+          let newNode = { name: node.name, originalIndex: ind };
           this._nodeMap[node.name] = newNode;
           this._nodeList.push(newNode);
         }
         this.updateNode(this._nodeMap[node.name], node);
         retainKeys[node.name] = true;
       }
+      ind++;
     }
-    // delete non-retained nodes
+    // rebuild the retained
+    let newList = [];
     for (let nodeName in this._nodeMap) {
       if (!(nodeName in retainKeys)) {
-        //this.spliceLinksForNode(node);
-        this._nodeList = this._nodeList.filter((it) => it !== this._nodeMap[nodeName]);
+        // this.spliceLinksForNode(node);
+        let theNode = this._nodeMap[nodeName];
         delete this._nodeMap[nodeName];
+      } else {
+        newList.push(this._nodeMap[nodeName]);
       }
     }
+    this._nodeList = newList;
     // don't need to do edge diff (I think?)
     this._linkList = [];
+    let idx = 0;
     for (let edge of this.get('links')) {
-      this._linkList.push({
-        source: this._nodeMap[edge.source],
-        target: this._nodeMap[edge.target],
-        type: 'suit'
-      });
+      if (edge.source in this._nodeMap && edge.target in this._nodeMap) {
+        this._linkList.push({
+          source: this._nodeMap[edge.source],
+          target: this._nodeMap[edge.target],
+          type: edge.type
+        });
+      } else {
+        this.sendAction('removedLink', idx);
+      }
+      idx++;
     }
+    console.log(this._nodeList);
+  },
+
+  clearList() {
+    this._nodeList = [];
+    this.redraw();
   },
 
   setForceProperties() {
@@ -134,6 +155,7 @@ export default Ember.Component.extend({
   },
 
   graphPropertyUpdate() {
+    console.log('data update');
     this.dataUpdate();
     this.redraw();
   },
@@ -141,7 +163,7 @@ export default Ember.Component.extend({
   setupGraph() {
     this.fill = d3.scale.category20();
     // init svg
-    this.outer = d3.select(this.element)
+    this.outer = d3.select('#graph-'+this.elementId)
       .append("svg:svg")
       .attr("width", this.get('width'))
       .attr("height", this.get('height'))
@@ -150,17 +172,11 @@ export default Ember.Component.extend({
       .on("zoom", () => {
         this.rescale()
       });
-    this.drag = d3.behavior.drag()
-      .origin((d) => d)
-      .on("dragstart", (d) => this.dragstart(d))
-      .on("dragend", (d) => this.dragend(d));
     this.outer.append("defs").append("marker")
       .attr("id", "marker-"+this.elementId)
       .attr("viewBox", "0 -5 10 10")
-      .attr("refX", 13)
-      .attr("refY", 0)
-      .attr("markerWidth", 4)
-      .attr("markerHeight", 4)
+      .attr("refX", 14)
+      .attr("refY", -1)
       .attr("orient", "auto")
       .append("path")
       .attr("d", "M0,-5L10,0L0,5");
@@ -170,15 +186,17 @@ export default Ember.Component.extend({
       .on("dblclick.zoom", null)
       .append('svg:g')
       .on("mousemove", () => {
-        this.mousemove();
+        this.stageMousemove();
       })
       .on("mouseup", () => {
-        this.mouseup();
+        this.stageMouseup();
       });
     // Per-type markers, as they don't inherit styles.
     this.vis.append('svg:rect')
-      .attr('width', this.get('width'))
-      .attr('height', this.get('height'))
+      .attr('x', -this.get('width')*50)
+      .attr('y', -this.get('height')*50)
+      .attr('width', this.get('width')*100)
+      .attr('height', this.get('height')*100)
       .attr('fill', 'white');
     // init force layout
     this.force = d3.layout.force()
@@ -198,10 +216,11 @@ export default Ember.Component.extend({
       .attr("y2", 0);
     this.link = this.vis.append('g').selectAll(".link");
     this.node = this.vis.append('g').selectAll(".node");
-    this.texts = this.vis.append('g').selectAll(".graph-text");
+    this.texts = this.vis.append('g').selectAll(".graph-node-text");
+    this.linkText = this.vis.append('g').selectAll(".graph-link-text");
     // add keyboard callback
-    //d3.select(window)
-    //	.on("keydown", this.keydown)
+    // d3.select(window)
+    //  	.on("keydown", this.keydown);
     this.redraw();
   },
 
@@ -221,64 +240,76 @@ export default Ember.Component.extend({
     return this.activeMouse(1)
   },
 
-  mousemove() {
-    if (!this.mousedown_node) {
+  stageMousemove() {
+    if (!this.mousedownNode) {
       return;
     }
-    if (this.get('editable')) {
+    if (this.get('adding')) {
       // update drag line
       this.drag_line
-        .attr("x1", this.mousedown_node.x)
-        .attr("y1", this.mousedown_node.y)
+        .attr("x1", this.mousedownNode.x)
+        .attr("y1", this.mousedownNode.y)
         .attr("x2", this.activeMouseX())
         .attr("y2", this.activeMouseY());
     } else {
-      this.mousedown_node.x = this.activeMouseX();
-      this.mousedown_node.y = this.activeMouseY();
+      this.mousedownNode.x = this.activeMouseX();
+      this.mousedownNode.y = this.activeMouseY();
       this.tick();
     }
   },
 
   id: 0,
 
-  mouseup() {
-    if (this.get('editable')) {
-      if (this.mousedown_node) {
+  stageMouseup() {
+    if (this.get('adding')) {
+      if (this.mousedownNode) {
         // hide drag line
         this.drag_line
           .attr("class", "drag_line_hidden");
-        if (!this.mouseup_node) {
+        if (!this.mouseupNode) {
           // add node
           let point = d3.mouse(this.get('element'));
           let node = {name: 'newnode'+this.id, text: 'new node '+this.id, x: point[0], y: point[1]};
           this.id++;
           this.sendAction('addedNode', node);
           // select new node
-          this.selected_node = node;
-          this.selected_link = null;
-          this.sendAction('addedLink', {source: this.mousedown_node.name, target: node.name});
+          this.selectedNode = node;
+          this.selectedLink = null;
+          this.sendAction('addedLink', {source: this.mousedownNode.name, target: node.name});
         }
       }
+    } else if (this.get('removing') && this.mouseupNode) {
+      this.sendAction('removedNode', this._nodeList.indexOf(this.mouseupNode));
+      this.clearList();
+      this.graphPropertyUpdate();
     }
+    this.resetMouseVars();
   },
 
   resetMouseVars() {
-    this.mousedown_node = null;
-    this.mouseup_node = null;
+    this.mousedownNode = null;
+    this.mouseupNode = null;
     this.mousedown_link = null;
+    this.set('dragging', false);
+  },
+
+  avg(a, b) {
+    return (a + b) / 2;
+  },
+
+  signDiff(a,b) {
+    return (a > b) ? 1 : -1;
   },
 
   tick() {
     if (this.link && this.node) {
-      //for node, i in this.data_nodes
-      // this.get('nodes').objectAt(i).set('x', node.x)
-      // this.get('nodes').objectAt(i).set('y', node.y)
-      //this.set('links', this.wrapListNative(this.data_links))
       this.node
         .attr("x", (d) => d.x)
         .attr("y", (d) => d.y);
-
       this.link.attr('d', this.linkPath);
+      this.linkText
+        .attr('x', (d) => this.avg(d.source.x, d.target.x) + this.signDiff(d.source.x, d.target.x)*10)
+        .attr('y', (d) => this.avg(d.source.y, d.target.y) + this.signDiff(d.source.x, d.target.x)*10);
       this.vis.selectAll('.group').attr("transform", (d, i) => {
         return "translate(" + d.x + "," + d.y + ")";
       });
@@ -293,47 +324,46 @@ export default Ember.Component.extend({
     //return "M" + d.source.x + "," + d.source.y + " " + d.target.x + "," + d.target.y;
   },
 
-  dragstart(d) {
+  mousedown(d) {
+    d3.event.stopPropagation();
     // disable zoom
-    d3.event.sourceEvent.stopPropagation();
-    this.mousedown_node = d;
-    if (this.mousedown_node == this.selected_node) {
-      this.selected_node = null;
+    //d3.event.sourceEvent.stopPropagation();
+    this.mousedownNode = d;
+    if (this.mousedownNode == this.selectedNode) {
+      this.selectedNode = null;
     } else {
-      this.selected_node = this.mousedown_node;
+      this.selectedNode = this.mousedownNode;
     }
-    this.selected_link = null;
-    if (this.get('editable')) {
+    this.selectedLink = null;
+    if (this.get('adding')) {
+      this.set('dragging', true);
       // reposition drag line
       this.drag_line
         .attr("class", "link")
-        .attr("x1", this.mousedown_node.x)
-        .attr("y1", this.mousedown_node.y)
-        .attr("x2", this.mousedown_node.x)
-        .attr("y2", this.mousedown_node.y);
+        .attr("x1", this.mousedownNode.x)
+        .attr("y1", this.mousedownNode.y)
+        .attr("x2", this.mousedownNode.x)
+        .attr("y2", this.mousedownNode.y);
       this.redraw();
     }
   },
 
-  dragend(d) {
-    if (this.mousedown_node && this.mouseup_node) {
-      if (this.mouseup_node == this.mousedown_node) {
-        this.resetMouseVars();
+  mouseup(d) {
+    if (this.mousedownNode && this.mouseupNode) {
+      if (this.mouseupNode == this.mousedownNode) {
         return;
       }
-      if (this.get('editable')) {
+      if (this.get('adding')) {
         // add link
-        let link = {source: this.mousedown_node.name, target: this.mouseup_node.name};
+        let link = {source: this.mousedownNode.name, target: this.mouseupNode.name};
         this.sendAction('addedLink', link);
         // select new link
-        //this.selected_link = link;
-        this.selected_node = null;
+        //this.selectedLink = link;
+        this.selectedNode = null;
       } else {
         this.force.start();
       }
-      this.redraw();
     }
-    this.resetMouseVars();
   },
 
   // rescale g
@@ -346,78 +376,118 @@ export default Ember.Component.extend({
 
   // redraw force layout
   redraw() {
+    // handling links
     this.link = this.link.data(this._linkList);
-    this.link.enter().insert("svg:path")
+    this.link.enter().append("svg:path")
       .attr("marker-end",  "url(." + window.location.pathname + "#marker-" + this.elementId + ")")
       .attr("class", function(d) { return "link"; })
       .on("mousedown", (d) => {
         this.mousedown_link = d;
-        if (this.mousedown_link == this.selected_link) {
-          this.selected_link = null;
-        } else {
-          this.selected_link = this.mousedown_link;
+        if (this.get('removing')) {
+          this.sendAction("removedLink", this._linkList.indexOf(d));
+        } else if (!this.get('editable')) {
+          if (this.mousedown_link == this.selectedLink) {
+            this.selectedLink = null;
+          } else {
+            this.selectedLink = this.mousedown_link;
+          }
         }
-        this.selected_node = null;
+        this.selectedNode = null;
         this.redraw();
       });
-    this.link.exit().remove();
+    this.link.exit().transition().style('opacity', 0).remove();
     this.link.classed("link_selected", (d) => {
-      return d == this.selected_link
+      return d == this.selectedLink
     });
-    this.nodedata = this.node.data(this._nodeList);
-    this.nodeGroup = this.nodedata
-      .enter()
-      .append("g")
-      .attr("class", "group");
-    this.nodeGroup.append("circle")
-      .attr("class", "node")
+
+    // handling link text
+    this.linkText = this.linkText.data(this._linkList);
+    this.linkText.enter().append('text')
+      .attr('class', 'graph-link-text')
+      .text((d) => d.type);
+    this.linkText.exit().transition().style('opacity', 0).remove();
+
+    // handling nodes
+    this.node = this.node.data(this._nodeList);
+    this.nodeGroup = this.node.enter();
+    this.nodeGroup.append('circle')
+      .attr("class", "node group")
       .attr("r", 5)
-      .call(this.drag)
       .on('mouseup', (d) => {
-        this.mouseup_node = d
+        let node = this._nodeList[d.originalIndex];
+        this.mouseupNode = d;
+        if (this.mousedownNode === this.mouseupNode) {
+          this.selectedNode = d;
+          this.redraw();
+        }
+        this.mouseup(d);
+      })
+      .on('mousedown', (d,i) => {
+        let node = this._nodeList[d.originalIndex];
+        this.mousedown(d);
       })
       .transition()
       .duration(750)
       .ease("elastic")
       .attr("r", 6.5);
+    this.node.exit().transition()
+      .style("opacity", 0)
+      .remove();
+
+    // handling texts
     this.vis.selectAll('.node')
-      .classed("node_selected", (d) => { return d == this.selected_node; });
-    this.textdata = this.texts.data(this._nodeList);
-    this.textGroup = this.textdata
-      .enter()
-      .append("g")
-      .attr("class", "group");
+      .classed("node_selected", (d) => { return d == this.selectedNode; });
+    this.texts = this.texts.data(this._nodeList);
+    this.textGroup = this.texts.enter();
     this.textGroup.append("text")
       .attr("dx", 12)
       .attr("dy", ".35em")
-      .attr('class', 'graph-text')
+      .attr('class', 'graph-node-text group')
       .text((d) => d.text);
-    this.textdata.exit().transition()
+    this.texts.exit().transition()
       .style("opacity", 0)
       .remove();
     // prevent browser's default behavior
     if (d3.event && d3.event.preventDefault) {
       d3.event.preventDefault();
-      d3.event.returnValue = false;
     }
     this.force.start();
   },
 
+  /*
   keydown() {
-    if (!this.selected_node && !this.selected_link) {
+    if (!this.selectedNode && !this.selectedLink) {
       return;
     }
     let key = d3.event.keyCode;
     if (key == 8 || key == 46) { // backspace or delete
-      if (this.selected_node) {
-        this.get('nodes').removeObject(this.selected_node);
-        this.spliceLinksForNode(this.selected_node);
-      } else if (this.selected_link) {
-        this.get('links').removeObject(this.selected_link);
+      if (this.selectedNode) {
+        this.sendAction("removedNode", this.selectedNode);
+        this.spliceLinksForNode(this.selectedNode);
+      } else if (this.selectedLink) {
+        this.sendAction("removedLink", this.selectedLink);
       }
-      this.selected_link = null;
-      this.selected_node = null;
+      this.selectedLink = null;
+      this.selectedNode = null;
       this.redraw();
+    }
+  },
+  */
+
+  adding: computed('mode', 'editable', function() {
+    return this.get('editable') && this.get('mode') == 'add';
+  }),
+
+  removing: computed('mode', 'editable', function() {
+    return this.get('editable') && this.get('mode') == 'remove';
+  }),
+
+  actions: {
+    setAdd() {
+      this.set('mode', 'add');
+    },
+    setRemove() {
+      this.set('mode', 'remove');
     }
   }
 });

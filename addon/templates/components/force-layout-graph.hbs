@@ -1,1 +1,9 @@
-{{yield}}
+
+<div id="graph-{{elementId}}" class="{{if editable "editing"}} {{if dragging "dragging"}}"></div>
+
+{{#if editable}}
+    <div class="graph-btn-group">
+        <div class="graph-btn {{if adding 'selected'}}" {{action "setAdd"}}>Add</div>
+        <div class="graph-btn {{if removing 'selected'}}" {{action "setRemove"}}>Remove</div>
+    </div>
+{{/if}}
