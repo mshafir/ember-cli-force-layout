@@ -1,6 +1,6 @@
 {
   "name": "ember-cli-d3-force-layout",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "An ember wrapper for a D3 force layout graph.",
   "directories": {
     "doc": "doc",
