@@ -84,6 +84,10 @@ body {
   stroke: #ff7f0e;
 }
 
+.hide-link {
+  display: none;
+}
+
 .graph-btn-group {
   background-color: grey;
 }

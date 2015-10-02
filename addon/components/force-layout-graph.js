@@ -10,6 +10,7 @@ export default Ember.Component.extend({
   height: 500,
   editable: true,
   dragging: false,
+  linkLabels: true,
 
   selectedNode: null,
   selectedLink: null,
@@ -20,6 +21,7 @@ export default Ember.Component.extend({
   initializeProperties() {
     this._initialize('charge', -1000);
     this._initialize('linkDistance', 50);
+    this._initialize('linkLabels', true)
     this._initialize('gravity', null);
     this._initialize('friction', null);
     this._initialize('editable', true);
@@ -35,6 +37,7 @@ export default Ember.Component.extend({
     this._bindProperty('linkDistance', this.forcePropertyUpdate);
     this._bindProperty('gravity', this.forcePropertyUpdate);
     this._bindProperty('friction', this.forcePropertyUpdate);
+    this._bindProperty('linkLabels', this.forcePropertyUpdate);
     this._bindProperty('nodes.@each', this.graphPropertyUpdate);
     this._bindProperty('links.@each', this.graphPropertyUpdate);
   },
@@ -273,8 +276,8 @@ export default Ember.Component.extend({
           this.id++;
           this.sendAction('addedNode', node);
           // select new node
-          this.selectedNode = node;
-          this.selectedLink = null;
+          this.set('selectedNode',node);
+          this.set('selectedLink',null);
           this.sendAction('addedLink', {source: this.mousedownNode.name, target: node.name});
         }
       }
@@ -403,8 +406,16 @@ export default Ember.Component.extend({
     // handling link text
     this.linkText = this.linkText.data(this._linkList);
     this.linkText.enter().append('text')
-      .attr('class', 'graph-link-text')
+      .attr('class', '.graph-link-text')
       .text((d) => d.type);
+    this.linkText
+      .attr('class', () => {
+        let classes = '';
+        if (!this.get('linkLabels')) {
+          classes += 'hide-link';
+        }
+        return classes + ' graph-link-text';
+      });
     this.linkText.exit().transition().style('opacity', 0).remove();
 
     // handling nodes

@@ -4,7 +4,7 @@ export default Ember.Route.extend({
   model() {
     return {
       width: 960,
-      height: 500,
+      height: 600,
       charge: -1000,
       gravity: null,
       linkDistance: 50,

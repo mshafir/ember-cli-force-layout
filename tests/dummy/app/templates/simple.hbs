@@ -11,6 +11,9 @@
 <div>
   <label>Editable {{input type="checkbox" checked=model.editable}}</label>
 </div>
+<div>
+  <label>Show Link Labels {{input type="checkbox" checked=model.linkLabels}}</label>
+</div>
 
 <div>
 	{{force-layout-graph
@@ -19,6 +22,7 @@
     gravity=model.gravity
     nodes=model.nodes
     links=model.links
+    linkLabels=model.linkLabels
     editable=model.editable
     addedNode="addedNode"
     removedNode="removedNode"
