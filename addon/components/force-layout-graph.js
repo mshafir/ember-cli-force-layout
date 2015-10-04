@@ -384,10 +384,10 @@ export default Ember.Component.extend({
     this.link.enter().append("svg:path")
       .attr("marker-end",  "url(." + window.location.pathname + "#marker-" + this.elementId + ")")
       .attr("class", function(d) { return "link"; })
-      .on("mousedown", (d) => {
+      .on("mousedown", (d,i) => {
         this.mousedown_link = d;
         if (this.get('removing')) {
-          this.sendAction("removedLink", d);
+          this.sendAction("removedLink", i);
         } else if (!this.get('editable')) {
           if (this.mousedown_link == this.selectedLink) {
             this.selectedLink = null;

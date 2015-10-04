@@ -23,4 +23,4 @@ export default Ember.Controller.extend({
       this.listRemove('model.links', link);
     }
   }
-})
+});
