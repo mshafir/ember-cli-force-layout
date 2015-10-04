@@ -387,12 +387,13 @@ export default Ember.Component.extend({
       .on("mousedown", (d) => {
         this.mousedown_link = d;
         if (this.get('removing')) {
-          this.sendAction("removedLink", this._linkList.indexOf(d));
+          this.sendAction("removedLink", d);
         } else if (!this.get('editable')) {
           if (this.mousedown_link == this.selectedLink) {
             this.selectedLink = null;
           } else {
             this.selectedLink = this.mousedown_link;
+            this.sendAction("selectedLink", d);
           }
         }
         this.selectedNode = null;
@@ -424,17 +425,17 @@ export default Ember.Component.extend({
     this.nodeGroup.append('circle')
       .attr("class", "node group")
       .attr("r", 5)
-      .on('mouseup', (d) => {
+      .on('mouseup', (d, i) => {
         let node = this._nodeList[d.originalIndex];
         this.mouseupNode = d;
         if (this.mousedownNode === this.mouseupNode) {
           this.selectedNode = d;
+          this.sendAction("selectedNode", d, i);
           this.redraw();
         }
         this.mouseup(d);
       })
-      .on('mousedown', (d,i) => {
-        let node = this._nodeList[d.originalIndex];
+      .on('mousedown', (d) => {
         this.mousedown(d);
       })
       .transition()
